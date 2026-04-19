@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  frontend:
+    image: nginx:alpine
+    container_name: knowledge-hub-frontend
+    ports:
+      - "3006:80"
+    volumes:
+      - ./frontend/index.html:/usr/share/nginx/html/index.html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: knowledge-hub-backend
+    ports:
+      - "3007:3007"
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+

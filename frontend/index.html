@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Knowledge Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css" />
+<style>
+:root {
+  --bg: #0d0f14;
+  --bg2: #13161e;
+  --bg3: #1a1e28;
+  --bg4: #222737;
+  --border: #2a2f3f;
+  --accent: #6c8aff;
+  --accent2: #a78bfa;
+  --accent3: #34d399;
+  --danger: #f87171;
+  --warn: #fbbf24;
+  --text: #e8eaf2;
+  --text2: #9ba3bf;
+  --text3: #5a6278;
+  --sidebar-w: 260px;
+  --topbar-h: 58px;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Topbar ─────────────────────────────────────────────── */
+#topbar {
+  height: var(--topbar-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+#logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--accent);
+  white-space: nowrap;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+}
+#logo svg { opacity: 0.9; }
+
+#search-wrap {
+  flex: 1;
+  position: relative;
+  max-width: 640px;
+}
+#search-wrap svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  pointer-events: none;
+}
+#search-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px 8px 38px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+}
+#search-input:focus { border-color: var(--accent); }
+#search-input::placeholder { color: var(--text3); }
+
+#search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  display: none;
+  padding: 2px;
+}
+#search-clear:hover { color: var(--text); }
+
+.topbar-actions { display: flex; gap: 8px; margin-left: auto; }
+
+.btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .18s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #7c9aff; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover { background: rgba(248,113,113,.1); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-icon { padding: 6px; background: transparent; color: var(--text3); border: none; cursor: pointer; border-radius: var(--radius-sm); transition: all .18s; }
+.btn-icon:hover { background: var(--bg4); color: var(--text); }
+
+/* ── Layout ─────────────────────────────────────────────── */
+#layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+#sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#sidebar-header {
+  padding: 14px 12px 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#folder-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 6px;
+}
+#folder-tree::-webkit-scrollbar { width: 4px; }
+#folder-tree::-webkit-scrollbar-track { background: transparent; }
+#folder-tree::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  transition: all .15s;
+  position: relative;
+  user-select: none;
+}
+.tree-item:hover { background: var(--bg3); color: var(--text); }
+.tree-item.active { background: rgba(108,138,255,.15); color: var(--accent); }
+.tree-item .tree-icon { width: 16px; flex-shrink: 0; }
+.tree-item .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-item .tree-toggle { color: var(--text3); transition: transform .2s; }
+.tree-item .tree-toggle.open { transform: rotate(90deg); }
+.tree-item .tree-actions { display: none; gap: 2px; }
+.tree-item:hover .tree-actions { display: flex; }
+.tree-children { padding-left: 16px; }
+
+.topic-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text2);
+  transition: all .15s;
+}
+.topic-item:hover { background: var(--bg3); color: var(--text); }
+.topic-item.active { color: var(--accent); }
+.topic-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.badge-html { background: rgba(108,138,255,.2); color: var(--accent); }
+.badge-pdf { background: rgba(248,113,113,.2); color: var(--danger); }
+
+#sidebar-footer {
+  padding: 10px 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Main ───────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Home view ──────────────────────────────────────────── */
+#home-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+#home-view::-webkit-scrollbar { width: 6px; }
+#home-view::-webkit-scrollbar-track { background: transparent; }
+#home-view::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 14px;
+}
+
+/* Recent row */
+#recent-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 32px;
+}
+#recent-row::-webkit-scrollbar { height: 4px; }
+#recent-row::-webkit-scrollbar-track { background: transparent; }
+#recent-row::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.recent-card {
+  min-width: 160px;
+  max-width: 160px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.recent-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.recent-card-icon { font-size: 22px; }
+.recent-card-name { font-size: 12.5px; font-weight: 500; color: var(--text); line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.recent-card-meta { font-size: 11px; color: var(--text3); }
+
+/* Topics grid */
+#topics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.topic-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  flex-direction: column;
+}
+.topic-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.topic-card-preview {
+  height: 120px;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.topic-card-preview-text {
+  position: absolute;
+  inset: 0;
+  padding: 10px;
+  font-size: 9px;
+  color: var(--text3);
+  line-height: 1.4;
+  overflow: hidden;
+  font-family: monospace;
+  opacity: 0.6;
+}
+.topic-card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.topic-card-name { font-size: 13.5px; font-weight: 500; color: var(--text); line-height: 1.3; }
+.topic-card-meta { display: flex; align-items: center; justify-content: space-between; }
+.topic-card-folder { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+.topic-card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+.topic-card:hover .topic-card-actions { opacity: 1; }
+
+/* Search results */
+#search-results { display: flex; flex-direction: column; gap: 8px; }
+.search-result-item {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.search-result-item:hover { border-color: var(--accent); }
+.search-result-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+.search-result-snippet { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
+.search-result-snippet mark { background: rgba(108,138,255,.3); color: var(--accent); border-radius: 2px; padding: 0 2px; }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text3);
+  gap: 12px;
+  text-align: center;
+}
+.empty-state-icon { font-size: 48px; opacity: 0.5; }
+.empty-state-title { font-family: 'Syne', sans-serif; font-size: 16px; color: var(--text2); }
+.empty-state-sub { font-size: 13px; }
+
+/* ── Viewer ─────────────────────────────────────────────── */
+#viewer-view {
+  flex: 1;
+  display: none;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+#viewer-topbar {
+  height: 46px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#viewer-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#viewer-frame-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#viewer-topbar-inner {
+  height: 46px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#viewer-title-inner { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#viewer-iframe {
+  flex: 1;
+  border: none;
+  background: #fff;
+}
+
+#pdf-viewer {
+  flex: 1;
+  overflow-y: auto;
+  background: #525659;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 12px;
+}
+#pdf-viewer::-webkit-scrollbar { width: 6px; }
+#pdf-viewer::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+.pdf-page-canvas { box-shadow: 0 2px 16px rgba(0,0,0,0.5); }
+#pdf-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text2);
+}
+
+/* ── Comments Panel ─────────────────────────────────────── */
+#comments-panel {
+  width: 300px;
+  min-width: 300px;
+  border-left: 1px solid var(--border);
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#comments-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Syne', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#autosave-indicator {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.autosave-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text3);
+}
+.autosave-dot.saving { background: var(--warn); animation: pulse .8s infinite; }
+.autosave-dot.saved { background: var(--accent3); }
+@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+
+#comments-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#comments-list::-webkit-scrollbar { width: 4px; }
+#comments-list::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.comment-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.comment-content {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.comment-meta {
+  font-size: 10.5px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.comment-actions { display: flex; gap: 4px; }
+
+#comments-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+#comment-textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 72px;
+  outline: none;
+  transition: border-color .2s;
+}
+#comment-textarea:focus { border-color: var(--accent); }
+#comment-textarea::placeholder { color: var(--text3); }
+
+/* ── Modal ──────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn .15s;
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  animation: slideUp .2s;
+}
+.modal-lg { width: 820px; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+.modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+.modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 12.5px; font-weight: 500; color: var(--text2); }
+.form-input {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color .2s;
+  width: 100%;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13.5px;
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+}
+.form-select option { background: var(--bg3); }
+
+/* Drop zone */
+#drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text3);
+}
+#drop-zone:hover, #drop-zone.dragover { border-color: var(--accent); background: rgba(108,138,255,.05); color: var(--text2); }
+#drop-zone-icon { font-size: 32px; }
+#drop-zone-text { font-size: 13px; }
+#drop-zone-sub { font-size: 11.5px; }
+#file-input { display: none; }
+
+/* Ollama suggest row */
+#ollama-suggest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(167,139,250,.08);
+  border: 1px solid rgba(167,139,250,.2);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--text2);
+}
+
+/* Context menu */
+#ctx-menu {
+  position: fixed;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  min-width: 160px;
+  overflow: hidden;
+}
+.ctx-item {
+  padding: 9px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text2);
+  transition: all .12s;
+}
+.ctx-item:hover { background: var(--bg3); color: var(--text); }
+.ctx-item.danger { color: var(--danger); }
+.ctx-item.danger:hover { background: rgba(248,113,113,.1); }
+.ctx-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+/* Spinner */
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(108,138,255,.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  animation: slideInRight .2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+}
+@keyframes slideInRight { from { transform: translateX(20px); opacity: 0 } to { transform: none; opacity: 1 } }
+.toast.success { border-color: var(--accent3); }
+.toast.error { border-color: var(--danger); }
+
+/* CodeMirror editor */
+.CodeMirror {
+  height: 400px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Scrollbar global */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ─────────────────────────────────────────── -->
+<div id="topbar">
+  <div id="logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    Knowledge Hub
+  </div>
+  <div id="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="search-input" type="text" placeholder="Search topics and content…" autocomplete="off" />
+    <button id="search-clear">✕</button>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-primary" id="btn-upload">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Upload
+    </button>
+  </div>
+</div>
+
+<!-- ── Layout ─────────────────────────────────────────── -->
+<div id="layout">
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      Navigation
+      <button class="btn-icon" id="btn-new-folder" title="New root folder">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+    <div id="folder-tree"></div>
+    <div id="sidebar-footer">
+      <div class="tree-item" id="nav-all" onclick="showHome(null)">
+        <svg class="tree-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span class="tree-label">All Topics</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main area -->
+  <div id="main">
+    <!-- Home view -->
+    <div id="home-view">
+      <div id="recent-section">
+        <div class="section-title">Recently Opened</div>
+        <div id="recent-row"></div>
+      </div>
+      <div class="section-title" id="topics-section-title">All Topics</div>
+      <div id="topics-grid"></div>
+      <div id="search-results" style="display:none"></div>
+    </div>
+
+    <!-- Viewer view -->
+    <div id="viewer-view">
+      <div id="viewer-frame-wrap">
+        <div id="viewer-topbar-inner">
+          <button class="btn-icon" onclick="closeViewer()" title="Back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </button>
+          <span id="viewer-title-inner">Topic</span>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+            <span id="viewer-badge" class="topic-badge"></span>
+            <button class="btn btn-ghost btn-sm" id="btn-edit-html" style="display:none" onclick="openEditModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button class="btn btn-ghost btn-sm" id="btn-replace-file" onclick="openReplaceModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Replace
+            </button>
+          </div>
+        </div>
+        <iframe id="viewer-iframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+        <div id="pdf-viewer" style="display:none">
+          <div id="pdf-controls">
+            <button class="btn btn-ghost btn-sm" id="pdf-prev">← Prev</button>
+            <span id="pdf-page-info">Page 1 / 1</span>
+            <button class="btn btn-ghost btn-sm" id="pdf-next">Next →</button>
+            <button class="btn btn-ghost btn-sm" id="pdf-zoom-out">−</button>
+            <span id="pdf-zoom-label">100%</span>
+            <button class="btn btn-ghost btn-sm" id="pdf-zoom-in">+</button>
+          </div>
+          <canvas id="pdf-canvas" class="pdf-page-canvas"></canvas>
+        </div>
+      </div>
+      <div id="comments-panel">
+        <div id="comments-header">
+          Notes
+          <div id="autosave-indicator">
+            <div class="autosave-dot" id="autosave-dot"></div>
+            <span id="autosave-label">Autosave on</span>
+          </div>
+        </div>
+        <div id="comments-list"></div>
+        <div id="comments-footer">
+          <textarea id="comment-textarea" placeholder="Add a note…"></textarea>
+          <button class="btn btn-primary btn-sm" id="btn-save-comment" onclick="saveComment()">Add Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Context Menu ───────────────────────────────────── -->
+<div id="ctx-menu"></div>
+
+<!-- ── Toast Container ───────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ── Upload Modal ──────────────────────────────────── -->
+<div id="upload-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Upload Topic</span>
+      <button class="btn-icon" onclick="closeUploadModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div id="drop-zone-icon">📄</div>
+        <div id="drop-zone-text">Drop file here or click to browse</div>
+        <div id="drop-zone-sub">Supports HTML and PDF files</div>
+      </div>
+      <input type="file" id="file-input" accept=".html,.htm,.pdf" />
+      <div id="selected-file-info" style="display:none" class="form-group">
+        <div class="form-label">Selected File</div>
+        <div id="selected-file-name" style="font-size:13px;color:var(--accent);display:flex;align-items:center;gap:6px"></div>
+      </div>
+      <div id="ollama-suggest-row" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        AI Suggest available
+        <button class="btn btn-ghost btn-sm" id="btn-ollama-suggest" onclick="ollamaSuggest()" style="margin-left:auto">✨ Suggest</button>
+        <div id="ollama-spinner" style="display:none"><div class="spinner"></div></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Topic Name *</label>
+        <input type="text" id="upload-name" class="form-input" placeholder="Enter topic name…" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Folder (optional)</label>
+        <select id="upload-folder" class="form-select">
+          <option value="">— Root (no folder) —</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn btn-primary" id="btn-upload-submit" onclick="submitUpload()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Replace Modal ──────────────────────────────────── -->
+<div id="replace-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Replace File</span>
+      <button class="btn-icon" onclick="closeModal('replace-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="replace-drop-zone" onclick="document.getElementById('replace-file-input').click()" style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;color:var(--text3)">
+        Drop new file here or click to browse
+      </div>
+      <input type="file" id="replace-file-input" accept=".html,.htm,.pdf" style="display:none" />
+      <div id="replace-file-name" style="font-size:13px;color:var(--accent);display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('replace-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitReplace()">Replace</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit HTML Modal ────────────────────────────────── -->
+<div id="edit-modal" class="modal-overlay" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">Edit HTML Source</span>
+      <button class="btn-icon" onclick="closeModal('edit-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="edit-textarea" style="display:none"></textarea>
+      <div id="cm-editor-wrap"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Folder Modal ───────────────────────────────────── -->
+<div id="folder-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="width:380px">
+    <div class="modal-header">
+      <span class="modal-title" id="folder-modal-title">New Folder</span>
+      <button class="btn-icon" onclick="closeModal('folder-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Folder Name</label>
+        <input type="text" id="folder-name-input" class="form-input" placeholder="Folder name…" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('folder-modal')">Cancel</button>
+      <button class="btn btn-primary" id="folder-modal-submit">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confirm Modal ──────────────────────────────────── -->
+<div id="confirm-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="width:360px">
+    <div class="modal-header">
+      <span class="modal-title" id="confirm-title">Confirm</span>
+      <button class="btn-icon" onclick="closeModal('confirm-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="font-size:14px;color:var(--text2);line-height:1.6"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('confirm-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Scripts ────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// ── Config ────────────────────────────────────────────────
+const API = 'http://localhost:3007';
+let CFG = { autosave_interval_ms: 5000, ollama_url: '', ollama_model: '' };
+let ollamaAvailable = false;
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── State ─────────────────────────────────────────────────
+let folders = [];
+let topics = [];
+let currentTopicId = null;
+let currentFolderFilter = null;
+let searchMode = false;
+let cmEditor = null;
+let replaceFile = null;
+let uploadFile = null;
+let pdfDoc = null;
+let pdfCurrentPage = 1;
+let pdfScale = 1.2;
+let autosaveTimer = null;
+let autosavePending = false;
+let editingCommentId = null;
+let expandedFolders = new Set();
+let ctxTarget = null;
+
+// ── API helpers ───────────────────────────────────────────
+async function api(method, path, body, isForm = false) {
+  const opts = { method, headers: {} };
+  if (body) {
+    if (isForm) opts.body = body;
+    else { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  }
+  const r = await fetch(API + path, opts);
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.detail || r.statusText); }
+  if (r.status === 204) return null;
+  const ct = r.headers.get('content-type') || '';
+  if (ct.includes('json')) return r.json();
+  return null;
+}
+
+// ── Toast ─────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── Init ──────────────────────────────────────────────────
+async function init() {
+  try {
+    CFG = await api('GET', '/config');
+  } catch (e) {}
+  try {
+    const s = await api('GET', '/ollama/status');
+    ollamaAvailable = s.available;
+  } catch (e) {}
+  await loadFolders();
+  await loadTopics();
+  await loadRecent();
+  startAutosave();
+  setupSearch();
+  setupDropZone();
+  setupKeyboard();
+}
+
+// ── Folders ───────────────────────────────────────────────
+async function loadFolders() {
+  folders = await api('GET', '/folders');
+  renderFolderTree();
+  populateFolderSelects();
+}
+
+function renderFolderTree() {
+  const tree = document.getElementById('folder-tree');
+  tree.innerHTML = '';
+  renderFolderLevel(folders, tree, 0);
+}
+
+function renderFolderLevel(items, container, depth) {
+  for (const f of items) {
+    const div = document.createElement('div');
+    div.dataset.folderId = f.id;
+
+    const item = document.createElement('div');
+    item.className = 'tree-item' + (currentFolderFilter === f.id ? ' active' : '');
+    item.style.paddingLeft = (8 + depth * 12) + 'px';
+
+    const hasChildren = f.children && f.children.length > 0;
+    const isExpanded = expandedFolders.has(f.id);
+
+    item.innerHTML = `
+      <span class="tree-toggle ${isExpanded ? 'open' : ''}" style="visibility:${hasChildren ? 'visible' : 'hidden'}">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </span>
+      <svg class="tree-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span class="tree-label">${escHtml(f.name)}</span>
+      <span class="tree-actions">
+        <button class="btn-icon" style="padding:2px" title="New subfolder" onclick="event.stopPropagation();openFolderModal(null,${f.id})">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </span>
+    `;
+
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.tree-actions')) return;
+      if (e.target.closest('.tree-toggle') || hasChildren) {
+        if (expandedFolders.has(f.id)) expandedFolders.delete(f.id);
+        else expandedFolders.add(f.id);
+        renderFolderTree();
+      }
+      showHome(f.id);
+    });
+
+    item.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showCtxMenu(e, 'folder', f);
+    });
+
+    div.appendChild(item);
+
+    // Folder topics in tree
+    const folderTopics = topics.filter(t => t.folder_id === f.id);
+    if (isExpanded || folderTopics.length > 0) {
+      const childWrap = document.createElement('div');
+      childWrap.className = 'tree-children';
+      if (isExpanded) {
+        // subfolder topics
+        for (const t of folderTopics) {
+          const ti = document.createElement('div');
+          ti.className = 'topic-item' + (currentTopicId === t.id ? ' active' : '');
+          ti.innerHTML = `
+            <span class="topic-badge badge-${t.file_type}">${t.file_type.toUpperCase()}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.name)}</span>
+          `;
+          ti.onclick = () => openTopic(t.id);
+          ti.addEventListener('contextmenu', (e) => { e.preventDefault(); showCtxMenu(e, 'topic', t); });
+          childWrap.appendChild(ti);
+        }
+        // subfolders
+        if (f.children && f.children.length) {
+          renderFolderLevel(f.children, childWrap, depth + 1);
+        }
+      }
+      div.appendChild(childWrap);
+    }
+
+    container.appendChild(div);
+  }
+
+  // Root-level topics (no folder)
+  if (depth === 0) {
+    const rootTopics = topics.filter(t => !t.folder_id);
+    for (const t of rootTopics) {
+      const ti = document.createElement('div');
+      ti.className = 'topic-item' + (currentTopicId === t.id ? ' active' : '');
+      ti.innerHTML = `
+        <span class="topic-badge badge-${t.file_type}">${t.file_type.toUpperCase()}</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(t.name)}</span>
+      `;
+      ti.onclick = () => openTopic(t.id);
+      ti.addEventListener('contextmenu', (e) => { e.preventDefault(); showCtxMenu(e, 'topic', t); });
+      container.appendChild(ti);
+    }
+  }
+}
+
+function getAllFolderOptions(items, depth = 0) {
+  let opts = [];
+  for (const f of items) {
+    opts.push({ id: f.id, name: ('  '.repeat(depth)) + f.name });
+    if (f.children) opts = opts.concat(getAllFolderOptions(f.children, depth + 1));
+  }
+  return opts;
+}
+
+function populateFolderSelects() {
+  const opts = getAllFolderOptions(folders);
+  const selects = ['upload-folder'];
+  for (const id of selects) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const val = el.value;
+    el.innerHTML = '<option value="">— Root (no folder) —</option>';
+    for (const o of opts) {
+      const opt = document.createElement('option');
+      opt.value = o.id;
+      opt.textContent = o.name;
+      el.appendChild(opt);
+    }
+    el.value = val;
+  }
+}
+
+// ── Topics ────────────────────────────────────────────────
+async function loadTopics(folderId = null) {
+  const path = folderId != null ? `/topics?folder_id=${folderId}` : '/topics';
+  topics = await api('GET', path);
+  renderTopicsGrid(topics);
+  renderFolderTree();
+}
+
+function renderTopicsGrid(items) {
+  const grid = document.getElementById('topics-grid');
+  grid.innerHTML = '';
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-icon">📂</div>
+      <div class="empty-state-title">No topics yet</div>
+      <div class="empty-state-sub">Upload an HTML or PDF file to get started</div>
+    </div>`;
+    return;
+  }
+  for (const t of items) {
+    const card = document.createElement('div');
+    card.className = 'topic-card';
+    const folderName = getFolderName(t.folder_id);
+    card.innerHTML = `
+      <div class="topic-card-preview">
+        <div class="topic-card-preview-text">${escHtml((t.name || '').substring(0, 120))}</div>
+        <span style="position:relative;z-index:1;font-size:36px">${t.file_type === 'pdf' ? '📕' : '🌐'}</span>
+      </div>
+      <div class="topic-card-body">
+        <div class="topic-card-name">${escHtml(t.name)}</div>
+        <div class="topic-card-meta">
+          <div class="topic-card-folder">
+            ${folderName ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escHtml(folderName)}` : ''}
+          </div>
+          <span class="topic-badge badge-${t.file_type}">${t.file_type.toUpperCase()}</span>
+        </div>
+        <div class="topic-card-meta">
+          <span style="font-size:11px;color:var(--text3)">${fmtDate(t.updated_at)}</span>
+          <div class="topic-card-actions">
+            <button class="btn-icon" title="Edit" onclick="event.stopPropagation();promptEditTopic(${t.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn-icon" title="Delete" style="color:var(--danger)" onclick="event.stopPropagation();deleteTopic(${t.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => openTopic(t.id));
+    card.addEventListener('contextmenu', (e) => { e.preventDefault(); showCtxMenu(e, 'topic', t); });
+    grid.appendChild(card);
+  }
+}
+
+// ── Recent ────────────────────────────────────────────────
+async function loadRecent() {
+  const recent = await api('GET', '/topics/recent?limit=8');
+  const row = document.getElementById('recent-row');
+  const section = document.getElementById('recent-section');
+  if (!recent.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  row.innerHTML = '';
+  for (const t of recent) {
+    const card = document.createElement('div');
+    card.className = 'recent-card';
+    card.innerHTML = `
+      <div class="recent-card-icon">${t.file_type === 'pdf' ? '📕' : '🌐'}</div>
+      <div class="recent-card-name">${escHtml(t.name)}</div>
+      <div class="recent-card-meta">${fmtDate(t.last_opened)}</div>
+    `;
+    card.onclick = () => openTopic(t.id);
+    row.appendChild(card);
+  }
+}
+
+// ── Open topic ────────────────────────────────────────────
+async function openTopic(id) {
+  currentTopicId = id;
+  const t = topics.find(x => x.id === id) || await api('GET', `/topics/${id}`);
+
+  api('PATCH', `/topics/${id}/opened`);
+
+  // Switch to viewer
+  document.getElementById('home-view').style.display = 'none';
+  const viewer = document.getElementById('viewer-view');
+  viewer.style.display = 'flex';
+  document.getElementById('viewer-title-inner').textContent = t.name;
+  const badge = document.getElementById('viewer-badge');
+  badge.textContent = t.file_type.toUpperCase();
+  badge.className = 'topic-badge badge-' + t.file_type;
+  document.getElementById('btn-edit-html').style.display = t.file_type === 'html' ? 'inline-flex' : 'none';
+
+  const iframe = document.getElementById('viewer-iframe');
+  const pdfV = document.getElementById('pdf-viewer');
+
+  if (t.file_type === 'html') {
+    iframe.style.display = 'block';
+    pdfV.style.display = 'none';
+    iframe.src = `${API}/topics/${id}/file`;
+  } else {
+    iframe.style.display = 'none';
+    pdfV.style.display = 'flex';
+    await loadPdf(`${API}/topics/${id}/file`);
+  }
+
+  await loadComments(id);
+  renderFolderTree();
+}
+
+function closeViewer() {
+  currentTopicId = null;
+  document.getElementById('viewer-view').style.display = 'none';
+  document.getElementById('home-view').style.display = '';
+  document.getElementById('viewer-iframe').src = 'about:blank';
+  renderFolderTree();
+  loadRecent();
+}
+
+// ── Home ──────────────────────────────────────────────────
+async function showHome(folderId) {
+  currentFolderFilter = folderId;
+  closeViewerIfOpen();
+  const title = document.getElementById('topics-section-title');
+  if (folderId == null) {
+    title.textContent = 'All Topics';
+    topics = await api('GET', '/topics');
+  } else {
+    const f = findFolder(folders, folderId);
+    title.textContent = f ? f.name : 'Folder';
+    topics = await api('GET', `/topics?folder_id=${folderId}`);
+  }
+  renderTopicsGrid(topics);
+  renderFolderTree();
+  hideSearch();
+}
+
+function closeViewerIfOpen() {
+  document.getElementById('viewer-view').style.display = 'none';
+  document.getElementById('home-view').style.display = '';
+  document.getElementById('viewer-iframe').src = 'about:blank';
+}
+
+function findFolder(items, id) {
+  for (const f of items) {
+    if (f.id === id) return f;
+    if (f.children) { const found = findFolder(f.children, id); if (found) return found; }
+  }
+  return null;
+}
+
+function getFolderName(folderId) {
+  if (!folderId) return '';
+  const f = findFolder(folders, folderId);
+  return f ? f.name : '';
+}
+
+// ── Search ────────────────────────────────────────────────
+function setupSearch() {
+  const input = document.getElementById('search-input');
+  const clear = document.getElementById('search-clear');
+  let debounce;
+  input.addEventListener('input', () => {
+    clear.style.display = input.value ? 'block' : 'none';
+    clearTimeout(debounce);
+    if (!input.value.trim()) { hideSearch(); return; }
+    debounce = setTimeout(() => doSearch(input.value.trim()), 300);
+  });
+  clear.addEventListener('click', () => { input.value = ''; clear.style.display = 'none'; hideSearch(); });
+}
+
+async function doSearch(q) {
+  searchMode = true;
+  closeViewerIfOpen();
+  document.getElementById('topics-grid').style.display = 'none';
+  document.getElementById('recent-section').style.display = 'none';
+  document.getElementById('topics-section-title').textContent = `Search: "${q}"`;
+  const results = await api('GET', `/search?q=${encodeURIComponent(q)}`);
+  const container = document.getElementById('search-results');
+  container.style.display = 'flex';
+  container.innerHTML = '';
+  if (!results.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">No results found</div></div>`;
+    return;
+  }
+  for (const r of results) {
+    const item = document.createElement('div');
+    item.className = 'search-result-item';
+    item.innerHTML = `
+      <div class="search-result-name">${r.file_type === 'pdf' ? '📕' : '🌐'} ${escHtml(r.name)} <span class="topic-badge badge-${r.file_type}" style="margin-left:6px">${r.file_type.toUpperCase()}</span></div>
+      <div class="search-result-snippet">${r.snippet}</div>
+    `;
+    item.onclick = () => openTopic(r.id);
+    container.appendChild(item);
+  }
+}
+
+function hideSearch() {
+  searchMode = false;
+  document.getElementById('topics-grid').style.display = 'grid';
+  document.getElementById('recent-section').style.display = '';
+  document.getElementById('search-results').style.display = 'none';
+}
+
+// ── Comments ──────────────────────────────────────────────
+let comments = [];
+
+async function loadComments(topicId) {
+  comments = await api('GET', `/topics/${topicId}/comments`);
+  renderComments();
+}
+
+function renderComments() {
+  const list = document.getElementById('comments-list');
+  list.innerHTML = '';
+  if (!comments.length) {
+    list.innerHTML = `<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:20px">No notes yet</div>`;
+    return;
+  }
+  for (const c of comments) {
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.innerHTML = `
+      <div class="comment-content">${escHtml(c.content)}</div>
+      <div class="comment-meta">
+        <span>${fmtDate(c.updated_at)}</span>
+        <div class="comment-actions">
+          <button class="btn-icon" style="padding:2px" title="Edit" onclick="editComment(${c.id})">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-icon" style="padding:2px;color:var(--danger)" title="Delete" onclick="deleteComment(${c.id})">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+    list.appendChild(item);
+  }
+}
+
+async function saveComment() {
+  const ta = document.getElementById('comment-textarea');
+  const content = ta.value.trim();
+  if (!content || !currentTopicId) return;
+  try {
+    if (editingCommentId) {
+      await api('PUT', `/topics/${currentTopicId}/comments/${editingCommentId}`, { content });
+      editingCommentId = null;
+      document.getElementById('btn-save-comment').textContent = 'Add Note';
+    } else {
+      await api('POST', `/topics/${currentTopicId}/comments`, { content });
+    }
+    ta.value = '';
+    await loadComments(currentTopicId);
+    toast('Note saved', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function editComment(id) {
+  const c = comments.find(x => x.id === id);
+  if (!c) return;
+  editingCommentId = id;
+  document.getElementById('comment-textarea').value = c.content;
+  document.getElementById('btn-save-comment').textContent = 'Update Note';
+  document.getElementById('comment-textarea').focus();
+}
+
+async function deleteComment(id) {
+  if (!confirm('Delete this note?')) return;
+  await api('DELETE', `/topics/${currentTopicId}/comments/${id}`);
+  await loadComments(currentTopicId);
+}
+
+// ── Autosave ──────────────────────────────────────────────
+function startAutosave() {
+  const interval = CFG.autosave_interval_ms || 5000;
+  const dot = document.getElementById('autosave-dot');
+  const label = document.getElementById('autosave-label');
+
+  document.getElementById('comment-textarea').addEventListener('input', () => {
+    autosavePending = true;
+    dot.className = 'autosave-dot saving';
+    label.textContent = 'Unsaved';
+  });
+
+  autosaveTimer = setInterval(async () => {
+    if (!autosavePending || !currentTopicId) return;
+    const content = document.getElementById('comment-textarea').value.trim();
+    if (!content) { autosavePending = false; dot.className = 'autosave-dot'; label.textContent = 'Autosave on'; return; }
+    try {
+      dot.className = 'autosave-dot saving';
+      if (editingCommentId) {
+        await api('PUT', `/topics/${currentTopicId}/comments/${editingCommentId}`, { content });
+      } else {
+        const c = await api('POST', `/topics/${currentTopicId}/comments`, { content });
+        editingCommentId = c.id;
+      }
+      autosavePending = false;
+      dot.className = 'autosave-dot saved';
+      label.textContent = 'Saved';
+      setTimeout(() => { dot.className = 'autosave-dot'; label.textContent = 'Autosave on'; }, 2000);
+      await loadComments(currentTopicId);
+    } catch (e) {
+      dot.className = 'autosave-dot';
+      label.textContent = 'Save failed';
+    }
+  }, interval);
+}
+
+// ── Upload Modal ──────────────────────────────────────────
+function openUploadModal() {
+  uploadFile = null;
+  document.getElementById('upload-name').value = '';
+  document.getElementById('upload-folder').value = '';
+  document.getElementById('selected-file-info').style.display = 'none';
+  document.getElementById('drop-zone').style.display = 'flex';
+  document.getElementById('ollama-suggest-row').style.display = ollamaAvailable ? 'flex' : 'none';
+  document.getElementById('upload-modal').style.display = 'flex';
+  populateFolderSelects();
+}
+
+function closeUploadModal() { document.getElementById('upload-modal').style.display = 'none'; }
+
+function setupDropZone() {
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); handleFileSelect(e.dataTransfer.files[0]); });
+  document.getElementById('file-input').addEventListener('change', e => handleFileSelect(e.target.files[0]));
+
+  const rdz = document.getElementById('replace-drop-zone');
+  rdz.addEventListener('dragover', e => { e.preventDefault(); rdz.style.borderColor = 'var(--accent)'; });
+  rdz.addEventListener('dragleave', () => rdz.style.borderColor = '');
+  rdz.addEventListener('drop', e => { e.preventDefault(); rdz.style.borderColor = ''; handleReplaceFileSelect(e.dataTransfer.files[0]); });
+  document.getElementById('replace-file-input').addEventListener('change', e => handleReplaceFileSelect(e.target.files[0]));
+}
+
+function handleFileSelect(file) {
+  if (!file) return;
+  uploadFile = file;
+  document.getElementById('selected-file-info').style.display = '';
+  document.getElementById('selected-file-name').innerHTML = `📄 ${escHtml(file.name)} <span style="color:var(--text3);font-size:11px">(${fmtSize(file.size)})</span>`;
+  if (!document.getElementById('upload-name').value) {
+    document.getElementById('upload-name').value = file.name.replace(/\.(html?|pdf)$/i, '');
+  }
+}
+
+async function submitUpload() {
+  const name = document.getElementById('upload-name').value.trim();
+  const folderId = document.getElementById('upload-folder').value;
+  if (!uploadFile) { toast('Please select a file', 'error'); return; }
+  if (!name) { toast('Please enter a topic name', 'error'); return; }
+
+  const btn = document.getElementById('btn-upload-submit');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Uploading…';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', uploadFile);
+    fd.append('name', name);
+    if (folderId) fd.append('folder_id', folderId);
+
+    const t = await api('POST', '/topics', fd, true);
+    closeUploadModal();
+    toast('Topic uploaded successfully', 'success');
+    await loadTopics(currentFolderFilter);
+    await loadRecent();
+    openTopic(t.id);
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Upload';
+  }
+}
+
+// ── Ollama suggest ────────────────────────────────────────
+async function ollamaSuggest() {
+  if (!uploadFile) { toast('Select a file first', 'error'); return; }
+  const spinner = document.getElementById('ollama-spinner');
+  spinner.style.display = 'block';
+  try {
+    const text = await readFileText(uploadFile);
+    const folderNames = getAllFolderOptions(folders).map(o => o.name.trim());
+    const result = await api('POST', '/ollama/suggest', { text, available_folders: folderNames });
+    document.getElementById('upload-name').value = result.suggested_name;
+    const sel = document.getElementById('upload-folder');
+    for (const opt of sel.options) {
+      if (opt.text.trim() === result.suggested_folder) { sel.value = opt.value; break; }
+    }
+    toast('AI suggestion applied', 'success');
+  } catch (e) { toast('Ollama unavailable: ' + e.message, 'error'); }
+  finally { spinner.style.display = 'none'; }
+}
+
+function readFileText(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => {
+      let text = e.target.result;
+      // Strip HTML tags for text extraction
+      const tmp = document.createElement('div');
+      tmp.innerHTML = text;
+      res(tmp.textContent || tmp.innerText || text);
+    };
+    r.onerror = rej;
+    r.readAsText(file);
+  });
+}
+
+// ── Replace file ──────────────────────────────────────────
+function openReplaceModal() {
+  replaceFile = null;
+  document.getElementById('replace-file-name').style.display = 'none';
+  document.getElementById('replace-modal').style.display = 'flex';
+}
+
+function handleReplaceFileSelect(file) {
+  if (!file) return;
+  replaceFile = file;
+  const el = document.getElementById('replace-file-name');
+  el.style.display = 'block';
+  el.textContent = `📄 ${file.name}`;
+}
+
+async function submitReplace() {
+  if (!replaceFile || !currentTopicId) return;
+  const fd = new FormData();
+  fd.append('file', replaceFile);
+  try {
+    await api('PATCH', `/topics/${currentTopicId}/file`, fd, true);
+    closeModal('replace-modal');
+    toast('File replaced', 'success');
+    const t = topics.find(x => x.id === currentTopicId);
+    if (t) openTopic(currentTopicId);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── Edit HTML ─────────────────────────────────────────────
+async function openEditModal() {
+  if (!currentTopicId) return;
+  const data = await api('GET', `/topics/${currentTopicId}/raw`);
+  document.getElementById('edit-modal').style.display = 'flex';
+  setTimeout(() => {
+    const wrap = document.getElementById('cm-editor-wrap');
+    wrap.innerHTML = '';
+    cmEditor = CodeMirror(wrap, {
+      value: data.content,
+      mode: 'htmlmixed',
+      theme: 'dracula',
+      lineNumbers: true,
+      lineWrapping: true,
+      tabSize: 2,
+    });
+  }, 50);
+}
+
+async function submitEdit() {
+  if (!cmEditor || !currentTopicId) return;
+  const content = cmEditor.getValue();
+  try {
+    const fd = new FormData();
+    fd.append('content', content);
+    await api('PATCH', `/topics/${currentTopicId}/content`, fd, true);
+    closeModal('edit-modal');
+    toast('HTML saved', 'success');
+    document.getElementById('viewer-iframe').src = `${API}/topics/${currentTopicId}/file?t=${Date.now()}`;
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── Folder modals ─────────────────────────────────────────
+let folderModalMode = null;
+let folderModalTarget = null;
+
+function openFolderModal(editFolder, parentId) {
+  folderModalMode = editFolder ? 'edit' : 'create';
+  folderModalTarget = editFolder || { parent_id: parentId };
+  document.getElementById('folder-modal-title').textContent = editFolder ? 'Rename Folder' : 'New Folder';
+  document.getElementById('folder-name-input').value = editFolder ? editFolder.name : '';
+  document.getElementById('folder-modal-submit').textContent = editFolder ? 'Save' : 'Create';
+  document.getElementById('folder-modal-submit').onclick = submitFolderModal;
+  document.getElementById('folder-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('folder-name-input').focus(), 100);
+}
+
+async function submitFolderModal() {
+  const name = document.getElementById('folder-name-input').value.trim();
+  if (!name) return;
+  try {
+    if (folderModalMode === 'edit') {
+      await api('PUT', `/folders/${folderModalTarget.id}`, { name });
+    } else {
+      await api('POST', '/folders', { name, parent_id: folderModalTarget.parent_id || null });
+    }
+    closeModal('folder-modal');
+    await loadFolders();
+    toast(folderModalMode === 'edit' ? 'Folder renamed' : 'Folder created', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── Topic CRUD ────────────────────────────────────────────
+async function promptEditTopic(id) {
+  const t = topics.find(x => x.id === id);
+  if (!t) return;
+  const name = prompt('Topic name:', t.name);
+  if (!name || name === t.name) return;
+  try {
+    await api('PUT', `/topics/${id}`, { name });
+    await loadTopics(currentFolderFilter);
+    toast('Topic renamed', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function deleteTopic(id) {
+  showConfirm('Delete Topic', 'This will permanently delete the topic and its file. Continue?', async () => {
+    try {
+      await api('DELETE', `/topics/${id}`);
+      if (currentTopicId === id) closeViewer();
+      await loadTopics(currentFolderFilter);
+      await loadRecent();
+      toast('Topic deleted', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  });
+}
+
+// ── Context menu ──────────────────────────────────────────
+function showCtxMenu(e, type, target) {
+  const menu = document.getElementById('ctx-menu');
+  ctxTarget = target;
+  menu.innerHTML = '';
+
+  if (type === 'folder') {
+    menu.innerHTML = `
+      <div class="ctx-item" onclick="openFolderModal(ctxTarget, null);hideCtxMenu()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Rename
+      </div>
+      <div class="ctx-item" onclick="openFolderModal(null, ctxTarget.id);hideCtxMenu()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Subfolder
+      </div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="deleteFolder(ctxTarget.id);hideCtxMenu()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Delete Folder
+      </div>
+    `;
+  } else {
+    menu.innerHTML = `
+      <div class="ctx-item" onclick="openTopic(ctxTarget.id);hideCtxMenu()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+        Open
+      </div>
+      <div class="ctx-item" onclick="promptEditTopic(ctxTarget.id);hideCtxMenu()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Rename
+      </div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-item danger" onclick="deleteTopic(ctxTarget.id);hideCtxMenu()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Delete
+      </div>
+    `;
+  }
+
+  menu.style.display = 'flex';
+  menu.style.flexDirection = 'column';
+  menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+  menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+}
+
+function hideCtxMenu() { document.getElementById('ctx-menu').style.display = 'none'; }
+document.addEventListener('click', hideCtxMenu);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtxMenu(); });
+
+async function deleteFolder(id) {
+  showConfirm('Delete Folder', 'This will delete the folder and all its contents. Continue?', async () => {
+    try {
+      await api('DELETE', `/folders/${id}`);
+      await loadFolders();
+      await loadTopics(null);
+      currentFolderFilter = null;
+      toast('Folder deleted', 'success');
+    } catch (e) { toast(e.message, 'error'); }
+  });
+}
+
+// ── Confirm dialog ────────────────────────────────────────
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = msg;
+  document.getElementById('confirm-ok').onclick = () => { closeModal('confirm-modal'); onOk(); };
+  document.getElementById('confirm-modal').style.display = 'flex';
+}
+
+// ── Modal helpers ─────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
+// ── PDF viewer ────────────────────────────────────────────
+async function loadPdf(url) {
+  pdfDoc = null; pdfCurrentPage = 1;
+  const resp = await fetch(url);
+  const buf = await resp.arrayBuffer();
+  pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+  updatePdfControls();
+  renderPdfPage(pdfCurrentPage);
+}
+
+async function renderPdfPage(n) {
+  if (!pdfDoc) return;
+  const page = await pdfDoc.getPage(n);
+  const viewport = page.getViewport({ scale: pdfScale });
+  const canvas = document.getElementById('pdf-canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  updatePdfControls();
+}
+
+function updatePdfControls() {
+  if (!pdfDoc) return;
+  document.getElementById('pdf-page-info').textContent = `Page ${pdfCurrentPage} / ${pdfDoc.numPages}`;
+  document.getElementById('pdf-zoom-label').textContent = Math.round(pdfScale * 100) + '%';
+}
+
+document.getElementById('pdf-prev').onclick = () => { if (pdfCurrentPage > 1) { pdfCurrentPage--; renderPdfPage(pdfCurrentPage); } };
+document.getElementById('pdf-next').onclick = () => { if (pdfDoc && pdfCurrentPage < pdfDoc.numPages) { pdfCurrentPage++; renderPdfPage(pdfCurrentPage); } };
+document.getElementById('pdf-zoom-in').onclick = () => { pdfScale = Math.min(3, pdfScale + 0.2); renderPdfPage(pdfCurrentPage); };
+document.getElementById('pdf-zoom-out').onclick = () => { pdfScale = Math.max(0.4, pdfScale - 0.2); renderPdfPage(pdfCurrentPage); };
+
+// ── Keyboard shortcuts ────────────────────────────────────
+function setupKeyboard() {
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('viewer-view').style.display === 'flex') {
+      if (document.querySelector('.modal-overlay[style*="flex"]')) return;
+      closeViewer();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('search-input').focus(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') { e.preventDefault(); openUploadModal(); }
+  });
+}
+
+// ── Wire up buttons ───────────────────────────────────────
+document.getElementById('btn-upload').onclick = openUploadModal;
+document.getElementById('btn-new-folder').onclick = () => openFolderModal(null, null);
+
+document.getElementById('folder-name-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitFolderModal();
+});
+document.getElementById('upload-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitUpload();
+});
+
+// ── Util ──────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+// ── Start ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
+
